@@ -14,6 +14,13 @@
 #  include <sys/timeb.h>
 #endif
 
+#include <patchlevel.h>
+
+#if PATCHLEVEL < 5
+#  define PL_op op
+#  define PL_curpad curpad
+#  define CALLRUNOPS runops()
+#endif
 
 #if defined(HAS_CLOCK_GETTIME) && !defined(PERL_CLOCK)
 
@@ -205,7 +212,7 @@ CODE:
     */
     ix -= 1;
     left = ST(0);
-    if(op->op_private & OPpLOCALE) {
+    if(MAXARG & OPpLOCALE) {
 	for(index = 1 ; index < items ; index++) {
 	    SV *right = ST(index);
 	    if(sv_cmp_locale(left, right) == ix)
@@ -254,6 +261,121 @@ CODE:
     XSRETURN(1);
 }
 
+void
+reduceab(block,...)
+    SV * block
+PROTOTYPE: &@
+CODE:
+{
+    SV *ret;
+    int index;
+    I32 markix;
+    GV *agv,*bgv;
+    if(items <= 1) {
+	XSRETURN_UNDEF;
+    }
+    agv = gv_fetchpv("a", TRUE, SVt_PV);
+    bgv = gv_fetchpv("b", TRUE, SVt_PV);
+    SAVESPTR(GvSV(agv));
+    SAVESPTR(GvSV(bgv));
+    ret = ST(1);
+    markix = sp - stack_base;
+    for(index = 2 ; index < items ; index++) {
+	PUSHMARK(sp);
+	GvSV(agv) = ret;
+	GvSV(bgv) = ST(index);
+	perl_call_sv(block,G_SCALAR|G_NOARGS);
+	ret = *stack_sp;
+    }
+    ST(0) = ret;
+    XSRETURN(1);
+}
+
+void
+reduceab2(block,...)
+    SV * block
+PROTOTYPE: &@
+CODE:
+{
+    SV *ret;
+    int index;
+    I32 markix;
+    GV *agv,*bgv,*gv;
+    HV *stash;
+    CV *cv;
+    OP *reducecop;
+    if(items <= 1) {
+	XSRETURN_UNDEF;
+    }
+    agv = gv_fetchpv("a", TRUE, SVt_PV);
+    bgv = gv_fetchpv("b", TRUE, SVt_PV);
+    SAVESPTR(GvSV(agv));
+    SAVESPTR(GvSV(bgv));
+    cv = sv_2cv(block, &stash, &gv, 0);
+    	    reducecop = CvSTART(cv);
+	    SAVESPTR(CvROOT(cv)->op_ppaddr);
+	    CvROOT(cv)->op_ppaddr = ppaddr[OP_NULL];
+	    SAVESPTR(PL_curpad);
+	    PL_curpad = AvARRAY((AV*)AvARRAY(CvPADLIST(cv))[1]);
+	    SAVETMPS;
+	    SAVESPTR(PL_op);
+    ret = ST(1);
+    markix = sp - stack_base;
+    for(index = 2 ; index < items ; index++) {
+	GvSV(agv) = ret;
+	GvSV(bgv) = ST(index);
+	PL_op = reducecop;
+	CALLRUNOPS;
+	ret = *stack_sp;
+    }
+    ST(0) = ret;
+    XSRETURN(1);
+}
+
+void
+reduce2(block,...)
+    SV * block
+PROTOTYPE: &@
+CODE:
+{
+    SV *ret;
+    int index;
+    I32 markix;
+    GV *agv,*bgv,*gv;
+    HV *stash;
+    CV *cv;
+    OP *reducecop;
+    AV *av;
+    SV **asv, **bsv;
+    if(items <= 1) {
+	XSRETURN_UNDEF;
+    }
+    agv = gv_fetchpv("_", TRUE, SVt_PV);
+    av = GvAV(agv);
+    asv = av_fetch(av,0,1);
+    bsv = av_fetch(av,1,1);
+    cv = sv_2cv(block, &stash, &gv, 0);
+    	    reducecop = CvSTART(cv);
+	    SAVESPTR(CvROOT(cv)->op_ppaddr);
+	    CvROOT(cv)->op_ppaddr = ppaddr[OP_NULL];
+	    SAVESPTR(PL_curpad);
+	    PL_curpad = AvARRAY((AV*)AvARRAY(CvPADLIST(cv))[1]);
+	    SAVETMPS;
+	    SAVESPTR(PL_op);
+    ret = ST(1);
+    markix = sp - stack_base;
+    for(index = 2 ; index < items ; index++) {
+	*asv = ret;
+	*bsv = ST(index);
+	PL_op = reducecop;
+	CALLRUNOPS;
+
+	ret = *stack_sp;
+	stack_sp = stack_base + markix;
+    }
+    ST(0) = ret;
+    XSRETURN(1);
+}
 
 char *
 blessed(sv)
@@ -268,3 +390,15 @@ CODE:
 }
 OUTPUT:
     RETVAL
+
+void
+readonly(sv)
+    SV * sv
+PROTOTYPE: $
+CODE:
+{
+    if(SvREADONLY(sv)) {
+	XSRETURN_YES;
+    }
+    XSRETURN_NO;
+}

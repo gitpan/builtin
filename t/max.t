@@ -17,6 +17,6 @@ print "not " unless max(2,1) == 2;
 print "ok 4\n";
 
 my @a = map { rand() } 1 .. 20;
-my @b = sort @a;
+my @b = sort { $a <=> $b } @a;
 print "not " unless max(@a) == $b[-1];
 print "ok 5\n";

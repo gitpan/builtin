@@ -1,0 +1,17 @@
+Sun Jul 26 1998 <gbarr@pobox.com> (Graham Barr)
+
+	Modified XS code so it will compile with 5.004 and 5.005
+
+Fri Feb 20 1998 <gbarr@pobox.com> (Graham Barr)
+
+	t/min.t, t/max.t
+	- Change sor to do a numerical sort
+	
+Fri Dec 19 1997 Graham Barr <gbarr@pobox.com>
+	
+	- Added readonly()
+	
+Wed Nov 19 1997 Graham Barr <gbarr@pobox.com>
+	
+	- Initial release
+

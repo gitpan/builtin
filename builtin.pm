@@ -11,7 +11,7 @@ use DynaLoader ();
 use Exporter ();
 use vars qw(@ISA @EXPORT_OK $VERSION);
 
-$VERSION = "0.01";
+$VERSION = "0.04";
 @ISA = qw(Exporter DynaLoader);
 @EXPORT_OK = qw(
 	blessed
@@ -23,6 +23,7 @@ $VERSION = "0.01";
 	reduce
 	sum
 	clock
+	readonly
 );
 
 bootstrap builtin $VERSION;
@@ -157,6 +158,12 @@ This function could be implemented using C<reduce> like this
 Returns the time in fractional seconds, to the resolution supplied by
 the OS. This function is provided as a high resolution replacement for
 perl's built-in C<time> function, see L<perlfunc/time>.
+
+=item readonly SCALAR
+
+Returns a true value is a read-only variable. This is useful in
+subroutines that want to modify the arguments, but need to check first
+if a constant was passed.
 
 =back
 

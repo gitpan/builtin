@@ -1,3 +1,4 @@
+ChangeLog
 MANIFEST
 Makefile.PL
 builtin.pm
@@ -12,3 +13,4 @@ t/min.t
 t/minstr.t
 t/reduce.t
 t/sum.t
+t/readonly.t
